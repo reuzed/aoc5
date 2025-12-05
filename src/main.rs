@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashMap, fs};
 
 #[ derive(Debug)]
 struct Range{
@@ -64,18 +64,54 @@ fn _part_1(){
     println!("Fresh: {}", fresh_count);
 }
 
+fn merge_ranges(ranges: &Vec<Range>) -> Vec<Range>{
+    // Merge ranges
+    // Sort lower bounds and upper bounds in ascending order
+    // From smallest to largest iterate through, track nesting level
+    
+    let mut bounds_map : Vec<(u64, i8)> = Vec::new();
+    
+    for range in ranges.iter(){
+        bounds_map.push((range.lower, 1));
+        bounds_map.push((range.upper+1, -1));
+    }
+    
+    bounds_map.sort_by(|a, b| a.0.cmp(&b.0));
+    
+    let mut new_ranges: Vec<Range> = Vec::new();
+    let mut current_lower= 0;
+    let mut nesting_level = 0;
+
+    for (bound, delta_nest) in bounds_map.iter(){
+        if nesting_level == 0 {
+            current_lower = *bound;
+        }
+        nesting_level += delta_nest;
+        if nesting_level == 0 {
+            new_ranges.push({
+                Range { lower: current_lower, upper: *bound }
+            })
+        }
+    }
+
+    return new_ranges;
+}
+
+fn measure_ranges(ranges: Vec<Range>) -> u64{
+    return ranges.iter().map(|r| r.upper - r.lower).sum()
+}
+
 fn main() {
     // let filename = "example.txt".to_string();
     let filename = "input.txt".to_string();
 
-    let (ranges, ids) = read_input(filename);
+    let (ranges, _ids) = read_input(filename);
 
-    let mut fresh_count = 0;
+    let merged_ranges = merge_ranges(&ranges);
+    
+    println!("Merged {:?}", merged_ranges);
 
-    for id in ids.iter(){
-        if test_ranges(*id, &ranges){
-            fresh_count += 1;
-        }
-    }
+    let fresh_count = measure_ranges(merged_ranges);
+
     println!("Fresh: {}", fresh_count);
 }
